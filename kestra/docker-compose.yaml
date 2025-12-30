@@ -1,0 +1,52 @@
+version: "1.0"
+services:
+  pgdatabase:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin
+      POSTGRES_DB: postgres-zoomcamp
+      POSTGRES_HOST_AUTH_METHOD: trust
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./postgres-data:/var/lib/postgresql/data
+    networks:
+      - kestra-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      retries: 5
+      start_period: 30s
+      timeout: 10s
+
+  kestra:
+    image: kestra/kestra:latest
+    command: server standalone --config /etc/config/kestra-application.yaml
+    volumes:
+      - ./kestra-data:/tmp/kestra/
+      - ./config/kestra-application.yaml:/etc/config/kestra-application.yaml
+      - ./var/run/docker.sock:/var/run/docker.sock
+    ports:
+      - "8081:8080"
+    networks:
+      - kestra-net
+    depends_on:
+      pgdatabase:
+        condition: service_healthy
+
+  pgadmin:
+    image: dpage/pgadmin4
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "8080:80"
+    networks:
+      - kestra-net
+    depends_on:
+      - pgdatabase
+
+networks:
+  kestra-net:
+    driver: bridge  

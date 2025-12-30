@@ -1,0 +1,22 @@
+{
+    "name": "postgres-dbz-connector",
+    "config": {
+        "connector.class": "io.debezium.connector.postgresql.PostgresConnector", 
+        "database.hostname": "postgresdb", 
+        "database.port": "5432", 
+        "database.user": "postgres", 
+        "database.password": "postgres", 
+        "database.dbname" : "demo",
+        "plugin.name": "pgoutput", 
+        "snapshot.mode": "initial",
+        "key.converter": "org.apache.kafka.connect.json.JsonConverter",
+        "value.converter": "org.apache.kafka.connect.json.JsonConverter",
+        "key.converter.schemas.enable": "false",
+        "value.converter.schemas.enable": "false",
+        "topic.prefix": "demo", 
+        "slot.name": "dbz",
+        "schema.history.internal.kafka.bootstrap.servers": "broker:19092",
+        "schema.history.internal.kafka.topic": "schema-changes.demo",
+        "slot.drop.on.stop": "false"
+    }
+}

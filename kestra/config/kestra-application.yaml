@@ -1,0 +1,23 @@
+datasources:
+  postgres:
+    url: jdbc:postgresql://pgdatabase:5432/postgres-zoomcamp
+    driver-class-name: org.postgresql.Driver
+    username: admin
+    password: admin
+kestra:
+  server:
+    basic-auth:
+      username: admin@kestra.io
+      password: Admin123@
+  storage:
+    type: local
+    local:
+      base-path: /tmp/kestra/storage/
+  repository:
+    type: postgres
+  queue:
+    type: postgres
+  tasks:
+    tmp-dir:
+      path: "/tmp/kestra-wd/tmp"
+  url: "http://localhost:8081/"

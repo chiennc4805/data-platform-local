@@ -1,0 +1,140 @@
+services:
+  postgresdb:
+    image: postgres:15
+    hostname: postgresdb
+    container_name: postgresdb
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: demo
+      # POSTGRES_HOST_AUTH_METHOD: trust
+    command: >
+      postgres -c wal_level=logical
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./postgres-data:/var/lib/postgresql/data
+    networks:
+      - streaming-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      retries: 5
+      start_period: 30s
+      timeout: 10s
+
+  pgadmin:
+    image: dpage/pgadmin4
+    hostname: pgadmin
+    container_name: pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "8080:80"
+    networks:
+      - streaming-net
+    depends_on:
+      - postgresdb
+
+  zookeeper:
+      image: zookeeper:3.9.4
+      hostname: zookeeper
+      container_name: zookeeper
+      environment:
+        ZOOKEEPER_CLIENT_PORT: 2181 
+        ZOOKEEPER_TICK_TIME: 2000
+      ports:
+        - "2181:2181"
+      networks:
+        - streaming-net
+
+  kafka-server:
+    image: apache/kafka:3.9.1
+    hostname: broker
+    container_name: broker
+    command: >
+      sh -c "
+      cd /opt/kafka &&
+      ./bin/kafka-server-start.sh config/server.properties 
+      "
+    volumes:
+      - ./kafka/config/server.properties:/opt/kafka/config/server.properties   
+    expose:
+      - "19092"
+      - "29093"
+    ports:
+      - "9092:9092"
+    networks:
+      - streaming-net
+    depends_on:
+      - zookeeper
+
+  kafka-connector:
+    build:
+      context: ./connector
+      dockerfile: Dockerfile.Connector
+    image: custom_dbz_pg_connector:2.6
+    hostname: connector
+    container_name: connector
+    ports:
+      - "8083:8083"
+    environment:
+      BOOTSTRAP_SERVERS: broker:19092
+      GROUP_ID: 1
+      CONFIG_STORAGE_TOPIC: connect_configs
+      OFFSET_STORAGE_TOPIC: connect_offsets
+      STATUS_STORAGE_TOPIC: connect_statuses
+      CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: 1
+      CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: 1
+      CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: 1
+    networks:
+      - streaming-net
+    depends_on:
+      - kafka-server
+
+  jobmanager:
+    # build:
+    #   context: ./flink
+    #   dockerfile: Dockerfile.flink
+    image: flink:1.20.3
+    hostname: jobmanager
+    container_name: jobmanager
+    ports:
+      - "8081:8081"
+    command: jobmanager
+    volumes:
+      - ./flink/jar/flink-sql-connector-kafka-3.4.0-1.20.jar:/opt/flink/lib/flink-sql-connector-kafka-3.4.0-1.20.jar
+      - ./flink/jar/flink-connector-jdbc-3.3.0-1.20.jar:/opt/flink/lib/flink-connector-jdbc-3.3.0-1.20.jar
+      - ./flink/jar/flink-connector-kafka-3.4.0-1.20.jar:/opt/flink/lib/flink-connector-kafka-3.4.0-1.20.jar
+      - ./flink/jar/kafka-clients-3.4.0.jar:/opt/flink/lib/kafka-clients-3.4.0.jar
+      - ./flink/jar/flink-clients-1.20.3.jar:/opt/flink/lib/flink-clients-1.20.3.jar
+      - ./flink/jar/flink-table-api-java-bridge-1.20.3.jar:/opt/flink/lib/flink-table-api-java-bridge-1.20.3.jar
+      - ./flink/jar/postgresql-42.7.3.jar:/opt/flink/lib/postgresql-42.7.3.jar
+      - ./flink/jar/flink-core-1.20.3.jar:/opt/flink/lib/flink-core-1.20.3.jar
+      - ./flink/jobs:/opt/flink/jobs
+    environment:
+      - |
+        FLINK_PROPERTIES=
+        jobmanager.rpc.address: jobmanager   
+    networks:
+      - streaming-net     
+
+  taskmanager:
+    image: flink:1.20.3
+    hostname: taskmanager
+    container_name: taskmanager
+    command: taskmanager
+    environment:
+      - |
+        FLINK_PROPERTIES=
+        jobmanager.rpc.address: jobmanager
+        taskmanager.numberOfTaskSlots: 2  
+    depends_on:
+      - jobmanager
+    networks:
+      - streaming-net
+
+networks:
+  streaming-net:
+    driver: bridge

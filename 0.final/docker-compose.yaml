@@ -1,0 +1,394 @@
+services:
+  minio:
+    image: minio/minio
+    container_name: minio
+    environment:
+      MINIO_ROOT_USER: minio
+      MINIO_ROOT_PASSWORD: minio@123
+    volumes:
+      - ./minio/data:/data
+    command: server /data --console-address ":9001"
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+
+  postgresdb:
+    image: postgres:15
+    container_name: postgresdb
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: demo
+      # POSTGRES_HOST_AUTH_METHOD: trust
+    command: >
+      postgres -c wal_level=logical
+    ports:
+      - "5433:5432"
+    volumes:
+      - ./postgresdb/postgres-init:/docker-entrypoint-initdb.d
+      - ./postgresdb/postgres-data:/var/lib/postgresql/data
+    networks:
+      - poc-net
+
+  postgres-metastore:
+    image: postgres:15
+    container_name: postgres-metastore
+    environment:
+      POSTGRES_USER: hive
+      POSTGRES_PASSWORD: hive
+      POSTGRES_DB: metastore
+      POSTGRES_HOST_AUTH_METHOD: password
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./postgres-metastore/postgres-init:/docker-entrypoint-initdb.d
+      - ./postgres-metastore/postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U hive -d metastore"]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+    networks:
+      - poc-net
+
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "8085:80"
+    networks:
+      - poc-net
+    depends_on:
+      - postgresdb
+      - postgres-metastore
+
+  hive-metastore:
+    image: apache/hive:4.0.0
+    container_name: hive-metastore
+    depends_on:
+      postgres-metastore:
+        condition: service_healthy
+      minio:
+        condition: service_started
+    environment:
+      SERVICE_NAME: metastore
+      HIVE_METASTORE_DB_TYPE: postgres
+      HIVE_METASTORE_USER: hive
+      HIVE_METASTORE_PASSWORD: hive
+      HIVE_METASTORE_DB_HOST: postgres-metastore
+      HIVE_METASTORE_DB_NAME: metastore
+      DB_DRIVER: postgres
+    volumes:
+      - ./hive-metastore/hive-conf:/opt/hive/conf
+      - ./hive-metastore/jars/postgresql-42.6.2.jar:/opt/hive/lib/postgresql-42.6.2.jar
+      # - ./hive-metastore/jars/hadoop-aws-3.3.4.jar:/opt/hive/lib/hadoop-aws-3.3.4.jar
+      # - ./hive-metastore/jars/aws-java-sdk-bundle-1.12.367.jar:/opt/hive/lib/aws-java-sdk-bundle-1.12.367.jar
+    ports:
+      - "9083:9083"
+    networks:
+      - poc-net
+
+  # hive-server:
+  #   image: apache/hive:4.0.0
+  #   container_name: hive-server
+  #   depends_on:
+  #     - hive-metastore
+  #   environment:
+  #     SERVICE_NAME: metastore
+  #     HIVE_METASTORE_DB_TYPE: postgres
+  #     HIVE_METASTORE_USER: hive
+  #     HIVE_METASTORE_PASSWORD: hive
+  #     HIVE_METASTORE_DB_HOST: postgres-metastore
+  #     HIVE_METASTORE_DB_NAME: metastore_db
+  #     SKIP_SCHEMA_INIT: true
+  #     DB_DRIVER: postgres
+  #   volumes:
+  #     - ./hive-metastore/hive-conf:/opt/hive/conf
+  #     - ./hive-metastore/jars/postgresql-42.6.2.jar:/opt/hive/lib/postgresql-42.6.2.jar
+  #     # - ./hive-metastore/jars/hadoop-aws-3.3.4.jar:/opt/hive/lib/hadoop-aws-3.3.4.jar
+  #     # - ./hive-metastore/jars/aws-java-sdk-bundle-1.12.367.jar:/opt/hive/lib/aws-java-sdk-bundle-1.12.367.jar
+  #   ports:
+  #     - "10000:10000"
+  #   networks:
+  #     - poc-net
+
+  spark-master:
+    image: spark:3.5.6-scala2.12-java11-python3-r-ubuntu
+    container_name: spark-master
+    environment:
+      - SPARK_MODE=master
+      - SPARK_MASTER_MEMORY=1G
+      - SPARK_MASTER_CORES=1
+      - SPARK_NO_DAEMONIZE=false
+    volumes:
+      - ./hive-metastore/hive-conf/hive-site.xml:/opt/spark/conf/hive-site.xml
+      # - ./jars/hadoop-aws-3.3.4.jar:/opt/spark/jars/hadoop-aws-3.3.4.jar
+      # - ./jars/aws-java-sdk-bundle-1.12.367.jar:/opt/spark/jars/aws-java-sdk-bundle-1.12.237.jar
+      # - ./jars/iceberg-spark-runtime-3.5_2.12-1.5.2.jar:/opt/spark/jars/iceberg-spark-runtime-3.5_2.12-1.5.2.jar
+      - ./spark/jobs:/opt/spark/jobs
+    command: /opt/spark/sbin/start-master.sh
+    # depends_on:
+    #   - hive-server
+    ports:
+      - "7077:7077"
+      - "8080:8080"
+      - "4040:4040"
+    networks:
+      - poc-net
+
+  spark-worker:
+    image: spark:3.5.6-scala2.12-java11-python3-r-ubuntu
+    container_name: spark-worker
+    environment:
+      - SPARK_MODE=worker
+      - SPARK_MASTER_URL=spark://spark-master:7077
+      - SPARK_WORKER_MEMORY=1G
+      - SPARK_WORKER_CORES=1
+      - SPARK_NO_DAEMONIZE=false
+    volumes:
+      - ./hive-metastore/hive-conf/hive-site.xml:/opt/spark/conf/hive-site.xml
+      # - ./jars/hadoop-aws-3.3.4.jar:/opt/spark/jars/hadoop-aws-3.3.4.jar
+      # - ./jars/aws-java-sdk-bundle-1.12.367.jar:/opt/spark/jars/aws-java-sdk-bundle-1.12.237.jar
+      # - ./jars/iceberg-spark-runtime-3.5_2.12-1.5.2.jar:/opt/spark/jars/iceberg-spark-runtime-3.5_2.12-1.5.2.jar
+    command: /opt/spark/sbin/start-worker.sh spark-master:7077
+    depends_on:
+      - spark-master
+    ports:
+      - "8082:8081"
+    networks:
+      - poc-net
+
+  redis:
+    image: redis:7
+    container_name: redis
+    ports:
+      - "6379:6379"
+    networks:
+      - poc-net
+
+  airflow-init:
+    image: apache/airflow:2.7.3
+    container_name: airflow-init
+    depends_on:
+      - postgres-metastore
+      - redis
+    environment:
+      - AIRFLOW__CORE__EXECUTOR=CeleryExecutor
+      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://hive:hive@postgres-metastore:5432/airflow
+      - AIRFLOW__CELERY__BROKER_URL=redis://redis:6379/0
+      - AIRFLOW__CELERY__RESULT_BACKEND=db+postgresql://hive:hive@postgres-metastore:5432/airflow
+      - AIRFLOW__CORE__FERNET_KEY=31E1-24OEkjXpTnzoypiTODWKtA3GUlRuqZjnkc9e20=
+      - AIRFLOW__CORE__LOAD_EXAMPLES=False
+      - _AIRFLOW_WWW_USER_CREATE=True
+      - _AIRFLOW_WWW_USER_USERNAME=admin
+      - _AIRFLOW_WWW_USER_PASSWORD=admin
+    entrypoint: >
+      bash -c "airflow db migrate &&
+               airflow users create --username admin --password admin --firstname Air --lastname Flow --role Admin --email admin@example.com"
+    networks:
+      - poc-net
+
+  airflow-webserver:
+    container_name: airflow-webserver
+    depends_on:
+      - airflow-init
+    build:
+      context: .
+      dockerfile: airflow/Dockerfile
+    image: custom-airflow:1.0.0
+    restart: always
+    ports:
+      - "8084:8080"
+    environment:
+      - AIRFLOW__WEBSERVER__SECRET_KEY=bb640ec7bda506f7deaa46500f964e1c
+      - AIRFLOW__CORE__FERNET_KEY=31E1-24OEkjXpTnzoypiTODWKtA3GUlRuqZjnkc9e20=
+      - AIRFLOW__CORE__EXECUTOR=CeleryExecutor
+      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://hive:hive@postgres-metastore:5432/airflow
+      - AIRFLOW__CELERY__BROKER_URL=redis://redis:6379/0
+      - AIRFLOW__CELERY__RESULT_BACKEND=db+postgresql://hive:hive@postgres-metastore:5432/airflow
+#      - _PIP_ADDITIONAL_REQUIREMENTS=-r /requirements/requirements.txt
+    volumes:
+      - ./airflow/dags:/opt/airflow/dags
+      - ./airflow/requirements:/requirements
+      - ./airflow/spark-jobs:/opt/airflow/jobs
+    command: webserver
+    networks:
+      - poc-net
+
+  airflow-scheduler:
+    image: custom-airflow:1.0.0
+    container_name: airflow-scheduler
+    depends_on:
+      - airflow-webserver
+    restart: always
+    environment:
+      - AIRFLOW__WEBSERVER__SECRET_KEY=bb640ec7bda506f7deaa46500f964e1c
+      - AIRFLOW__CORE__FERNET_KEY=31E1-24OEkjXpTnzoypiTODWKtA3GUlRuqZjnkc9e20=
+      - AIRFLOW__CORE__EXECUTOR=CeleryExecutor
+      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://hive:hive@postgres-metastore:5432/airflow
+      - AIRFLOW__CELERY__BROKER_URL=redis://redis:6379/0
+      - AIRFLOW__CELERY__RESULT_BACKEND=db+postgresql://hive:hive@postgres-metastore:5432/airflow
+#      - _PIP_ADDITIONAL_REQUIREMENTS=-r /requirements/requirements.txt
+    volumes:
+      - ./airflow/dags:/opt/airflow/dags
+      - ./airflow/requirements:/requirements
+      - ./airflow/spark-jobs:/opt/airflow/jobs
+    command: scheduler
+    networks:
+      - poc-net
+
+  airflow-worker:
+    image: custom-airflow:1.0.0
+    container_name: airflow-worker
+    depends_on:
+      - airflow-scheduler
+    restart: always
+    environment:
+      - AIRFLOW__WEBSERVER__SECRET_KEY=bb640ec7bda506f7deaa46500f964e1c
+      - AIRFLOW__CORE__FERNET_KEY=31E1-24OEkjXpTnzoypiTODWKtA3GUlRuqZjnkc9e20=
+      - AIRFLOW__CORE__EXECUTOR=CeleryExecutor
+      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://hive:hive@postgres-metastore:5432/airflow
+      - AIRFLOW__CELERY__BROKER_URL=redis://redis:6379/0
+      - AIRFLOW__CELERY__RESULT_BACKEND=db+postgresql://hive:hive@postgres-metastore:5432/airflow
+#      - _PIP_ADDITIONAL_REQUIREMENTS=-r /requirements/requirements.txt
+    volumes:
+      - ./airflow/dags:/opt/airflow/dags
+      - ./airflow/requirements:/requirements
+      - ./airflow/spark-jobs:/opt/airflow/jobs
+    command: celery worker
+    networks:
+      - poc-net
+
+  airflow-triggerer:
+    image: custom-airflow:1.0.0
+    container_name: airflow-triggerer
+    depends_on:
+      - airflow-scheduler
+    restart: always
+    environment:
+      - AIRFLOW__WEBSERVER__SECRET_KEY=bb640ec7bda506f7deaa46500f964e1c
+      - AIRFLOW__CORE__FERNET_KEY=31E1-24OEkjXpTnzoypiTODWKtA3GUlRuqZjnkc9e20=
+      - AIRFLOW__CORE__EXECUTOR=CeleryExecutor
+      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://hive:hive@postgres-metastore:5432/airflow
+      - AIRFLOW__CELERY__BROKER_URL=redis://redis:6379/0
+      - AIRFLOW__CELERY__RESULT_BACKEND=db+postgresql://hive:hive@postgres-metastore:5432/airflow
+    volumes:
+      - ./airflow/dags:/opt/airflow/dags
+      - ./airflow/requirements:/requirements
+      - ./airflow/spark-jobs:/opt/airflow/jobs
+    command: triggerer
+    networks:
+      - poc-net
+
+  zookeeper:
+    image: zookeeper:3.9.4
+    hostname: zookeeper
+    container_name: zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181 
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - "2181:2181"
+    networks:
+      - poc-net
+
+  kafka-server:
+    image: apache/kafka:3.9.1
+    hostname: broker
+    container_name: broker
+    command: >
+      sh -c "
+      cd /opt/kafka &&
+      ./bin/kafka-server-start.sh config/server.properties 
+      "
+    volumes:
+      - ./kafka/config/server.properties:/opt/kafka/config/server.properties   
+    expose:
+      - "19092"
+      - "29093"
+    ports:
+      - "9092:9092"
+    networks:
+      - poc-net
+    depends_on:
+      - zookeeper
+
+  kafka-connector:
+    image: debezium/connect:2.6
+    hostname: connector
+    container_name: connector
+    ports:
+      - "8083:8083"
+    environment:
+      BOOTSTRAP_SERVERS: broker:19092
+      GROUP_ID: 1
+      CONFIG_STORAGE_TOPIC: connect_configs
+      OFFSET_STORAGE_TOPIC: connect_offsets
+      STATUS_STORAGE_TOPIC: connect_statuses
+      CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: 1
+      CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: 1
+      CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: 1
+    volumes:
+      - ./kafka-connector/connectors/:/kafka/connectors
+    networks:
+      - poc-net
+    depends_on:
+      - kafka-server
+
+  jobmanager:
+    image: flink:1.20.3
+    hostname: jobmanager
+    container_name: jobmanager
+    ports:
+      - "8081:8081"
+    command: jobmanager
+    volumes:
+      - ./flink/jar/flink-sql-connector-kafka-3.4.0-1.20.jar:/opt/flink/lib/flink-sql-connector-kafka-3.4.0-1.20.jar
+      - ./flink/jar/flink-connector-jdbc-3.3.0-1.20.jar:/opt/flink/lib/flink-connector-jdbc-3.3.0-1.20.jar
+      - ./flink/jar/flink-connector-kafka-3.4.0-1.20.jar:/opt/flink/lib/flink-connector-kafka-3.4.0-1.20.jar
+      - ./flink/jar/kafka-clients-3.4.0.jar:/opt/flink/lib/kafka-clients-3.4.0.jar
+      - ./flink/jar/flink-clients-1.20.3.jar:/opt/flink/lib/flink-clients-1.20.3.jar
+      - ./flink/jar/flink-table-api-java-bridge-1.20.3.jar:/opt/flink/lib/flink-table-api-java-bridge-1.20.3.jar
+      - ./flink/jar/postgresql-42.7.3.jar:/opt/flink/lib/postgresql-42.7.3.jar
+      - ./flink/jar/flink-core-1.20.3.jar:/opt/flink/lib/flink-core-1.20.3.jar
+      - ./flink/jar/hadoop-common-3.3.6.jar:/opt/flink/lib/hadoop-common-3.3.6.jar
+      - ./flink/jobs:/opt/flink/jobs
+      - ./flink/job-configs:/opt/flink/job-configs
+    environment:
+      - |
+        FLINK_PROPERTIES=
+        jobmanager.rpc.address: jobmanager   
+    networks:
+      - poc-net     
+
+  taskmanager:
+    image: flink:1.20.3
+    hostname: taskmanager
+    container_name: taskmanager
+    command: taskmanager
+    environment:
+      - |
+        FLINK_PROPERTIES=
+        jobmanager.rpc.address: jobmanager
+        taskmanager.numberOfTaskSlots: 2  
+    volumes:
+      - ./flink/jar/flink-sql-connector-kafka-3.4.0-1.20.jar:/opt/flink/lib/flink-sql-connector-kafka-3.4.0-1.20.jar
+      - ./flink/jar/flink-connector-jdbc-3.3.0-1.20.jar:/opt/flink/lib/flink-connector-jdbc-3.3.0-1.20.jar
+      - ./flink/jar/flink-connector-kafka-3.4.0-1.20.jar:/opt/flink/lib/flink-connector-kafka-3.4.0-1.20.jar
+      - ./flink/jar/kafka-clients-3.4.0.jar:/opt/flink/lib/kafka-clients-3.4.0.jar
+      - ./flink/jar/flink-clients-1.20.3.jar:/opt/flink/lib/flink-clients-1.20.3.jar
+      - ./flink/jar/flink-table-api-java-bridge-1.20.3.jar:/opt/flink/lib/flink-table-api-java-bridge-1.20.3.jar
+      - ./flink/jar/postgresql-42.7.3.jar:/opt/flink/lib/postgresql-42.7.3.jar
+      - ./flink/jar/flink-core-1.20.3.jar:/opt/flink/lib/flink-core-1.20.3.jar
+      - ./flink/jar/hadoop-common-3.3.6.jar:/opt/flink/lib/hadoop-common-3.3.6.jar
+    depends_on:
+      - jobmanager
+    networks:
+      - poc-net
+
+networks:
+  poc-net:
+    driver: bridge

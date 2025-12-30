@@ -1,0 +1,43 @@
+[source]
+CREATE TABLE kafka_customer (
+    `before` ROW<id INT, name STRING, email STRING, created_at BIGINT>,
+    `after`  ROW<id INT, name STRING, email STRING, created_at BIGINT>,
+    op STRING,
+    ts_ms TIMESTAMP(3)
+    ) WITH (
+        'connector' = 'kafka',
+        'topic' = 'demo.public.customer',
+        'properties.bootstrap.servers' = 'broker:19092',
+        'properties.group.id' = 'demo-flink-1',
+        'scan.startup.mode' = 'earliest-offset',
+        'format' = 'json',
+        'json.ignore-parse-errors' = 'true'
+)
+
+[sink]
+CREATE TABLE pg_customer_event (
+    op STRING,
+    id INT,
+    name STRING,
+    email STRING,
+    created_at TIMESTAMP(3),
+    ts_ms TIMESTAMP(3)
+    ) WITH (
+        'connector' = 'jdbc',
+        'url' = 'jdbc:postgresql://postgresdb:5432/demo',
+        'table-name' = 'public.output_flink_3',
+        'username' = 'postgres',
+        'password' = 'postgres',
+        'driver' = 'org.postgresql.Driver'
+)
+
+[insert]
+INSERT INTO pg_customer_event
+SELECT
+    op,
+    CASE WHEN op = 'd' THEN `before`.id ELSE `after`.id END AS id,
+    CASE WHEN op = 'd' THEN `before`.name ELSE `after`.name END AS name,
+    CASE WHEN op = 'd' THEN `before`.email ELSE `after`.email END AS email,
+    TO_TIMESTAMP_LTZ(CASE WHEN op = 'd' THEN `before`.created_at ELSE `after`.created_at END, 3) AS created_at,
+    ts_ms
+FROM kafka_customer;

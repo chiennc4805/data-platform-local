@@ -1,0 +1,7 @@
+{
+    "yaml.schemas": {
+        "https://www.schemastore.org/sourcehut-build-0.65.0.json": "untitled:Untitled-1"
+    },
+    "dbt.enableNewLineagePanel": true,
+    "java.configuration.updateBuildConfiguration": "interactive"
+}

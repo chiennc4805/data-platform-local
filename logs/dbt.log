@@ -1,0 +1,15 @@
+[0m14:35:00.085843 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'invocation', 'label': 'start', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x0000020B42ABB040>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x0000020B44DD5150>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x0000020B44DD4F70>]}
+
+
+============================== 14:35:00.093309 | 55aae9a3-1ae7-499d-a8d0-79e887c6b6e8 ==============================
+[0m14:35:00.093309 [info ] [MainThread]: Running with dbt=1.10.15
+[0m14:35:00.093309 [debug] [MainThread]: running dbt with arguments {'static_parser': 'True', 'no_print': 'None', 'version_check': 'True', 'target_path': 'None', 'warn_error_options': 'WarnErrorOptionsV2(error=[], warn=[], silence=[])', 'printer_width': '80', 'write_json': 'True', 'introspect': 'True', 'log_cache_events': 'False', 'empty': 'None', 'cache_selected_only': 'False', 'log_format': 'default', 'debug': 'False', 'fail_fast': 'False', 'profiles_dir': 'C:\\Users\\Administrator\\Desktop\\DE-Zoomcamp\\dbt\\dbt_demo_zoomcamp\\profiles', 'send_anonymous_usage_stats': 'True', 'quiet': 'False', 'warn_error': 'None', 'partial_parse': 'True', 'indirect_selection': 'eager', 'use_colors': 'True', 'invocation_command': 'dbt deps', 'use_experimental_parser': 'False', 'log_path': 'logs'}
+[0m14:35:00.096294 [error] [MainThread]: Encountered an error:
+Runtime Error
+  No dbt_project.yml found at expected path C:\Users\Administrator\Desktop\DE-Zoomcamp\dbt_project.yml
+  Verify that each entry within packages.yml (and their transitive dependencies) contains a file named dbt_project.yml
+  
+[0m14:35:00.096294 [debug] [MainThread]: Command `dbt deps` failed at 14:35:00.096294 after 0.09 seconds
+[0m14:35:00.096294 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'invocation', 'label': 'end', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x0000020B42ABB040>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x0000020B44DD5AB0>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x0000020B44DD59C0>]}
+[0m14:35:00.096294 [debug] [MainThread]: Flushing usage events
+[0m14:35:01.317515 [debug] [MainThread]: An error was encountered while trying to flush usage events

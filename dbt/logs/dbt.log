@@ -1,0 +1,56 @@
+[0m14:04:59.601869 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'invocation', 'label': 'start', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x00000242001FB070>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x0000024202615150>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x0000024202614F40>]}
+
+
+============================== 14:04:59.604003 | ecb7b8ea-bccc-4b34-90a2-1e9e1315a9e8 ==============================
+[0m14:04:59.604003 [info ] [MainThread]: Running with dbt=1.10.15
+[0m14:04:59.604003 [debug] [MainThread]: running dbt with arguments {'version_check': 'True', 'no_print': 'None', 'static_parser': 'True', 'target_path': 'None', 'warn_error_options': 'WarnErrorOptionsV2(error=[], warn=[], silence=[])', 'printer_width': '80', 'write_json': 'True', 'introspect': 'True', 'log_cache_events': 'False', 'empty': 'None', 'cache_selected_only': 'False', 'log_format': 'default', 'debug': 'False', 'fail_fast': 'False', 'partial_parse': 'True', 'send_anonymous_usage_stats': 'True', 'quiet': 'False', 'warn_error': 'None', 'profiles_dir': 'C:\\Users\\Administrator\\.dbt', 'indirect_selection': 'eager', 'use_colors': 'True', 'invocation_command': 'dbt init', 'use_experimental_parser': 'False', 'log_path': 'logs'}
+[0m14:04:59.635331 [info ] [MainThread]: Creating dbt configuration folder at C:\Users\Administrator\.dbt
+[0m14:05:15.438473 [debug] [MainThread]: Starter project path: C:\Users\Administrator\AppData\Local\Programs\Python\Python310\lib\site-packages\dbt\include\starter_project
+[0m14:05:15.583431 [info ] [MainThread]: 
+Your new dbt project "dbt_demo_zoomcamp" was created!
+
+For more information on how to configure the profiles.yml file,
+please consult the dbt documentation here:
+
+  https://docs.getdbt.com/docs/configure-your-profile
+
+One more thing:
+
+Need help? Don't hesitate to reach out to us via GitHub issues or on Slack:
+
+  https://community.getdbt.com/
+
+Happy modeling!
+
+[0m14:05:15.586417 [info ] [MainThread]: Setting up your profile.
+[0m14:06:55.942935 [info ] [MainThread]: Profile dbt_demo_zoomcamp written to C:\Users\Administrator\.dbt\profiles.yml using target's profile_template.yml and your supplied values. Run 'dbt debug' to validate the connection.
+[0m14:06:55.942935 [debug] [MainThread]: Command `dbt init` succeeded at 14:06:55.942935 after 116.42 seconds
+[0m14:06:55.942935 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'invocation', 'label': 'end', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x00000242001FB070>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x0000024202614F10>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x0000024202707220>]}
+[0m14:06:55.942935 [debug] [MainThread]: Flushing usage events
+[0m14:06:57.058719 [debug] [MainThread]: An error was encountered while trying to flush usage events
+[0m14:24:55.027612 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'invocation', 'label': 'start', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x000001ED8EDEB040>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x000001ED911050F0>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x000001ED91104F40>]}
+
+
+============================== 14:24:55.035399 | 5dc281ba-8b9b-4b4f-9b9e-1404b2c56e45 ==============================
+[0m14:24:55.035399 [info ] [MainThread]: Running with dbt=1.10.15
+[0m14:24:55.036400 [debug] [MainThread]: running dbt with arguments {'version_check': 'True', 'no_print': 'None', 'static_parser': 'True', 'warn_error_options': 'WarnErrorOptionsV2(error=[], warn=[], silence=[])', 'target_path': 'None', 'printer_width': '80', 'write_json': 'True', 'empty': 'None', 'log_cache_events': 'False', 'introspect': 'True', 'cache_selected_only': 'False', 'log_format': 'default', 'debug': 'False', 'fail_fast': 'False', 'profiles_dir': 'C:\\Users\\Administrator\\.dbt', 'send_anonymous_usage_stats': 'True', 'quiet': 'False', 'warn_error': 'None', 'partial_parse': 'True', 'indirect_selection': 'eager', 'invocation_command': 'dbt debug --config-dir', 'use_colors': 'True', 'use_experimental_parser': 'False', 'log_path': 'logs'}
+[0m14:24:55.052978 [info ] [MainThread]: To view your profiles.yml file, run:
+
+start C:\Users\Administrator\.dbt
+[0m14:24:55.053782 [debug] [MainThread]: Command `dbt debug` succeeded at 14:24:55.053782 after 0.13 seconds
+[0m14:24:55.054794 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'invocation', 'label': 'end', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x000001ED8EDEB040>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x000001ED911050F0>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x000001ED91105240>]}
+[0m14:24:55.054794 [debug] [MainThread]: Flushing usage events
+[0m14:24:56.376698 [debug] [MainThread]: An error was encountered while trying to flush usage events
+[0m14:28:40.734745 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'invocation', 'label': 'start', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x000002299B10B040>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x000002299D419150>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x000002299D418F70>]}
+
+
+============================== 14:28:40.738234 | 9e65a7df-d8dd-4b3b-8eb9-7d39ad8ebcb3 ==============================
+[0m14:28:40.738234 [info ] [MainThread]: Running with dbt=1.10.15
+[0m14:28:40.739778 [debug] [MainThread]: running dbt with arguments {'static_parser': 'True', 'no_print': 'None', 'version_check': 'True', 'warn_error_options': 'WarnErrorOptionsV2(error=[], warn=[], silence=[])', 'target_path': 'None', 'printer_width': '80', 'write_json': 'True', 'introspect': 'True', 'log_cache_events': 'False', 'empty': 'None', 'cache_selected_only': 'False', 'log_format': 'default', 'debug': 'False', 'fail_fast': 'False', 'partial_parse': 'True', 'send_anonymous_usage_stats': 'True', 'quiet': 'False', 'warn_error': 'None', 'profiles_dir': 'C:\\Users\\Administrator\\.dbt', 'indirect_selection': 'eager', 'use_colors': 'True', 'invocation_command': 'dbt debug --config-dir', 'use_experimental_parser': 'False', 'log_path': 'logs'}
+[0m14:28:40.756007 [info ] [MainThread]: To view your profiles.yml file, run:
+
+start C:\Users\Administrator\.dbt
+[0m14:28:40.760350 [debug] [MainThread]: Command `dbt debug` succeeded at 14:28:40.760350 after 0.14 seconds
+[0m14:28:40.761007 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'invocation', 'label': 'end', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x000002299B10B040>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x000002299D419150>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x000002299D419240>]}
+[0m14:28:40.761007 [debug] [MainThread]: Flushing usage events
+[0m14:28:41.973690 [debug] [MainThread]: An error was encountered while trying to flush usage events
