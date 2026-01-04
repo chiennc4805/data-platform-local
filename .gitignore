@@ -1,0 +1,5 @@
+.vscode
+
+0.final/postgresdb/postgres-data
+0.final/postgres-metastore/postgres-data
+0.final/minio/data

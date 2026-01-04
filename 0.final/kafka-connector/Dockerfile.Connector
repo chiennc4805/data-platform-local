@@ -1,5 +1,3 @@
 FROM debezium/connect:2.6
 
-COPY config /connectors
-
-COPY register-connectors.sh /register-connectors.sh
+COPY ./kafka-connector/connectors /kafka/connectors

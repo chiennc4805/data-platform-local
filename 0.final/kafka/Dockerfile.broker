@@ -1,0 +1,7 @@
+FROM apache/kafka:3.9.1
+
+COPY ./kafka/config/broker/broker.properties /opt/kafka/config/kraft/broker.properties
+
+CMD sh -c "cd /opt/kafka/ && \
+  ./bin/kafka-storage.sh format --ignore-formatted --cluster-id kECtpLrRRdetFwieZqE__Q --config config/kraft/broker.properties && \
+  ./bin/kafka-server-start.sh config/kraft/broker.properties"

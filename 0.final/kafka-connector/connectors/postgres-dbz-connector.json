@@ -2,7 +2,7 @@
     "name": "postgres-dbz-connector",
     "config": {
         "connector.class": "io.debezium.connector.postgresql.PostgresConnector", 
-        "database.hostname": "postgresdb", 
+        "database.hostname": "postgresdb.streaming.svc.cluster.local", 
         "database.port": "5432", 
         "database.user": "postgres", 
         "database.password": "postgres", 
@@ -15,7 +15,7 @@
         "value.converter.schemas.enable": "false",
         "topic.prefix": "demo", 
         "slot.name": "dbz",
-        "schema.history.internal.kafka.bootstrap.servers": "broker:19092",
+        "schema.history.internal.kafka.bootstrap.servers": "kafka-broker-0.kafka-broker.streaming.svc.cluster.local:9092",
         "schema.history.internal.kafka.topic": "schema-changes.demo",
         "slot.drop.on.stop": "false"
     }
